@@ -24,10 +24,26 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
         binding.buttonLoad.setOnClickListener {
-//            lifecycleScope.launch {
-//                loadData()
-//            }
-            loadWithoutCoroutine()
+            binding.progress.isVisible = true
+            binding.buttonLoad.isEnabled = false
+
+            val jobCity = lifecycleScope.launch {
+                val city = loadCity()
+                binding.tvLocation.text = city
+            }
+
+            val jobTemp = lifecycleScope.launch {
+                val temperature = loadTemperature()
+                binding.tvTemperature.text = temperature.toString()
+            }
+
+            lifecycleScope.launch {
+                jobTemp.join()
+                jobCity.join()
+
+                binding.progress.isVisible = false
+                binding.buttonLoad.isEnabled = true
+            }
         }
 
     }
@@ -90,7 +106,7 @@ class MainActivity : AppCompatActivity() {
         val city = loadCity()
 
         binding.tvLocation.text = city
-        val temp = loadTemperature(city)
+        val temp = loadTemperature()
         binding.tvTemperature.text = temp.toString()
         binding.progress.isVisible = false
         binding.buttonLoad.isEnabled = true
@@ -102,17 +118,8 @@ class MainActivity : AppCompatActivity() {
         return "Moscow"
     }
 
-    private suspend fun loadTemperature(city: String): Int {
-
-        Toast.makeText(
-            this,
-            getString(R.string.loading_temperature_toast, city),
-            Toast.LENGTH_LONG
-        ).show()
-
+    private suspend fun loadTemperature(): Int {
         delay(5000)
-
-
         return 17
     }
 }
