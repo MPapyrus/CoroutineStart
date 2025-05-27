@@ -1,5 +1,6 @@
 package com.example.coroutinestart
 
+import android.health.connect.datatypes.units.Temperature
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -9,6 +10,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import com.example.coroutinestart.databinding.ActivityMainBinding
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.concurrent.thread
@@ -27,19 +30,23 @@ class MainActivity : AppCompatActivity() {
             binding.progress.isVisible = true
             binding.buttonLoad.isEnabled = false
 
-            val jobCity = lifecycleScope.launch {
+            val deferredCity: Deferred<String> = lifecycleScope.async {
                 val city = loadCity()
                 binding.tvLocation.text = city
+                city
             }
 
-            val jobTemp = lifecycleScope.launch {
+            val deferredTemp: Deferred<Int> = lifecycleScope.async {
                 val temperature = loadTemperature()
                 binding.tvTemperature.text = temperature.toString()
+                temperature
             }
 
             lifecycleScope.launch {
-                jobTemp.join()
-                jobCity.join()
+                val city = deferredCity.await()
+                val temperature = deferredTemp.await()
+
+                Toast.makeText(this@MainActivity, "City: $city, Temperature: $temperature", Toast.LENGTH_SHORT).show()
 
                 binding.progress.isVisible = false
                 binding.buttonLoad.isEnabled = true
