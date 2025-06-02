@@ -2,6 +2,7 @@ package com.example.coroutinestart
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -14,38 +15,31 @@ import kotlin.concurrent.thread
 
 class MainViewModel : ViewModel() {
 
-    private val parentJob = Job()
-    private val exceptionHandler = CoroutineExceptionHandler {_, throwable ->
-        Log.d(LOG_TAG, "Exception caught: $throwable")
-    }
-    private val coroutineScope = CoroutineScope(Dispatchers.Main + parentJob + exceptionHandler)
-
     fun method() {
-        val childJob1 = coroutineScope.launch {
+        val job = viewModelScope.launch(Dispatchers.Default) {
+            Log.d(LOG_TAG, "Started")
+            val before = System.currentTimeMillis()
+            var count = 0
+            for (i in 0 until 100_000_000) {
+                for (j in 0 until 100) {
+                    count++
+                }
+            }
+
+            Log.d(LOG_TAG, "Finished ${System.currentTimeMillis()-before}")
+        }
+
+        job.invokeOnCompletion {
+            Log.d(LOG_TAG, "Coroutine was cancelled. $it")
+        }
+
+        viewModelScope.launch {
             delay(3000)
-            Log.d(LOG_TAG, "first coroutine finished")
-        }
-
-        val childJob2 = coroutineScope.launch {
-            delay(2000)
-            Log.d(LOG_TAG, "second coroutine finished")
-        }
-
-        val childJob3 = coroutineScope.async {
-            delay(1000)
-            error()
-            Log.d(LOG_TAG, "third coroutine finished")
+            job.cancel()
         }
     }
 
-    private fun error() {
-        throw RuntimeException()
-    }
 
-    override fun onCleared() {
-        coroutineScope.cancel()
-        super.onCleared()
-    }
 
     companion object {
         const val LOG_TAG = "MainViewModel"
