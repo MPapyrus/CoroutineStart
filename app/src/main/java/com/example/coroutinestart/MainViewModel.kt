@@ -2,6 +2,7 @@ package com.example.coroutinestart
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -10,30 +11,48 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.concurrent.thread
 
-class MainViewModel: ViewModel() {
+class MainViewModel : ViewModel() {
 
     private val parentJob = Job()
-    private val coroutineScope = CoroutineScope(Dispatchers.Main + parentJob)
+    private val exceptionHandler = CoroutineExceptionHandler {_, throwable ->
+        Log.d(LOG_TAG, "Exception caught: $throwable")
+    }
+    private val coroutineScope = CoroutineScope(Dispatchers.Main + parentJob + exceptionHandler)
 
     fun method() {
         val childJob1 = coroutineScope.launch {
             delay(3000)
+            launch {
+                delay(3000)
+                error()
+                Log.d(LOG_TAG, "first first coroutine finished")
+            }
             Log.d(LOG_TAG, "first coroutine finished")
         }
 
         val childJob2 = coroutineScope.launch {
             delay(2000)
+            launch {
+                delay(2000)
+                Log.d(LOG_TAG, "second second coroutine finished")
+
+            }
             Log.d(LOG_TAG, "second coroutine finished")
         }
 
-        thread {
-            Thread.sleep(2000)
-            parentJob.cancel()
-            Log.d(LOG_TAG, "Parent job active: ${parentJob.isActive}")
-        }
+        val childJob3 = coroutineScope.launch {
+            delay(1000)
+            launch {
+                delay(1000)
+                Log.d(LOG_TAG, "third third coroutine finished")
 
-        Log.d(LOG_TAG, parentJob.children.contains(childJob1).toString())
-        Log.d(LOG_TAG, parentJob.children.contains(childJob2).toString())
+            }
+            Log.d(LOG_TAG, "third coroutine finished")
+        }
+    }
+
+    private fun error() {
+        throw RuntimeException()
     }
 
     override fun onCleared() {
