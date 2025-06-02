@@ -6,6 +6,7 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -22,31 +23,17 @@ class MainViewModel : ViewModel() {
     fun method() {
         val childJob1 = coroutineScope.launch {
             delay(3000)
-            launch {
-                delay(3000)
-                error()
-                Log.d(LOG_TAG, "first first coroutine finished")
-            }
             Log.d(LOG_TAG, "first coroutine finished")
         }
 
         val childJob2 = coroutineScope.launch {
             delay(2000)
-            launch {
-                delay(2000)
-                Log.d(LOG_TAG, "second second coroutine finished")
-
-            }
             Log.d(LOG_TAG, "second coroutine finished")
         }
 
-        val childJob3 = coroutineScope.launch {
+        val childJob3 = coroutineScope.async {
             delay(1000)
-            launch {
-                delay(1000)
-                Log.d(LOG_TAG, "third third coroutine finished")
-
-            }
+            error()
             Log.d(LOG_TAG, "third coroutine finished")
         }
     }
